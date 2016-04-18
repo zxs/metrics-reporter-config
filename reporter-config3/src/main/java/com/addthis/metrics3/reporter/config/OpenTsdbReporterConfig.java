@@ -22,8 +22,11 @@ import com.github.sps.metrics.opentsdb.OpenTsdb;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class OpenTsdbReporterConfig extends AbstractOpenTsdbReporterConfig implements MetricsReporterConfigThree {
   private static final String REPORTER_CLASS = "com.github.sps.metrics.OpenTsdbReporter";
@@ -42,11 +45,14 @@ public class OpenTsdbReporterConfig extends AbstractOpenTsdbReporterConfig imple
         log.info("Enabling OpenTsdbReporter to {}:{}",
                 new Object[]{hostPort.getHost(), hostPort.getPort()});
         String baseUrl = "http://" + hostPort.getHost() + ":" + hostPort.getPort();
+        Map<String, String> tags = new HashMap<String, String>();
+        tags.put("host", InetAddress.getLocalHost().getHostName());
         OpenTsdbReporter reporter = OpenTsdbReporter.forRegistry(registry)
                 .convertRatesTo(getRealRateunit())
                 .convertDurationsTo(getRealDurationunit())
                 .prefixedWith(getResolvedPrefix())
                 .filter(MetricFilterTransformer.generateFilter(getPredicate()))
+                .withTags(tags)
                 .build(new OpenTsdb.Builder(baseUrl).create());
         reporter.start(getPeriod(), getRealTimeunit());
         reporters.add(reporter);
