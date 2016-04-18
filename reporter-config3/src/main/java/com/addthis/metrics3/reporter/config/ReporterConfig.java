@@ -47,6 +47,8 @@ public class ReporterConfig extends AbstractReporterConfig
     private List<RiemannReporterConfig> riemann;
     @Valid
     private List<StatsDReporterConfig> statsd;
+    @Valid
+    private List<OpenTsdbReporterConfig> opentsdb;
 
     public List<ConsoleReporterConfig> getConsole()
     {
@@ -106,6 +108,16 @@ public class ReporterConfig extends AbstractReporterConfig
     public void setStatsd(List<StatsDReporterConfig> statsd)
     {
         this.statsd = statsd;
+    }
+
+    public List<OpenTsdbReporterConfig> getOpentsdb()
+    {
+        return opentsdb;
+    }
+
+    public void setOpentsdb(List<OpenTsdbReporterConfig> opentsdb)
+    {
+        this.opentsdb = opentsdb;
     }
 
     public boolean enableConsole(MetricRegistry registry)
@@ -216,6 +228,25 @@ public class ReporterConfig extends AbstractReporterConfig
         return !failures;
     }
 
+    public boolean enableOpenTsdb(MetricRegistry registry)
+    {
+        boolean failures = false;
+        if (opentsdb == null)
+        {
+            log.debug("Asked to enable openTsdb, but it was not configured");
+            return false;
+        }
+        for (OpenTsdbReporterConfig openTsdbConfig : opentsdb)
+        {
+            if (!openTsdbConfig.enable(registry))
+            {
+                failures = true;
+            }
+        }
+        return !failures;
+    }
+
+
     public boolean enableAll(MetricRegistry registry)
     {
         boolean enabled = false;
@@ -243,6 +274,10 @@ public class ReporterConfig extends AbstractReporterConfig
         {
             enabled = true;
         }
+        if (opentsdb != null && enableOpenTsdb(registry))
+        {
+            enabled = true;
+        }
         if (!enabled)
         {
             log.warn("No reporters were succesfully enabled");
@@ -265,6 +300,7 @@ public class ReporterConfig extends AbstractReporterConfig
         report(ganglia);
         report(graphite);
         report(riemann);
+        report(opentsdb);
     }
 
     public static ReporterConfig loadFromFileAndValidate(String fileName) throws IOException
